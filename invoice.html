@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        .form-group, .item-row {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"], input[type="number"], input[type="date"] {
+            width: calc(100% - 10px);
+            padding: 10px;
+            margin-right: 5px;
+            box-sizing: border-box;
+        }
+
+        .item-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .item-description, .item-quantity, .item-price {
+            flex: 1;
+        }
+
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button.remove-item {
+            background-color: #dc3545;
+        }
+
+        button.remove-item:hover {
+            background-color: #c82333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        table th {
+            background-color: #f8f8f8;
+        }
+
+        #grand-total {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Top tower technologies</h1>
+        <form id="invoice-form">
+            <div class="form-group">
+                <label for="invoice-number">Invoice Number:</label>
+                <input type="text" id="invoice-number" placeholder="Enter Invoice Number" required>
+            </div>
+            <div class="form-group">
+                <label for="date">Date:</label>
+                <input type="date" id="date" required>
+            </div>
+            <div class="form-group">
+                <label for="client-name">Client Name:</label>
+                <input type="text" id="client-name" placeholder="Enter Client Name" required>
+            </div>
+            <div id="items-container">
+                <h2>Items</h2>
+                <div class="item-row">
+                    <input type="text" class="item-description" placeholder="Item Description" required>
+                    <input type="number" class="item-quantity" placeholder="Quantity" required>
+                    <input type="number" class="item-price" placeholder="Price" required>
+                    <button type="button" class="remove-item">Remove</button>
+                </div>
+            </div>
+            <button type="button" id="add-item">Add Item</button>
+            <button type="submit">Generate Invoice</button>
+        </form>
+    </div>
+
+    <script>
+        document.getElementById('add-item').addEventListener('click', function() {
+            const itemsContainer = document.getElementById('items-container');
+            const itemRow = document.createElement('div');
+            itemRow.className = 'item-row';
+            itemRow.innerHTML = `
+                <input type="text" class="item-description" placeholder="Item Description" required>
+                <input type="number" class="item-quantity" placeholder="Quantity" required>
+                <input type="number" class="item-price" placeholder="Price" required>
+                <button type="button" class="remove-item">Remove</button>
+            `;
+            itemsContainer.appendChild(itemRow);
+
+            itemRow.querySelector('.remove-item').addEventListener('click', function() {
+                itemRow.remove();
+            });
+        });
+
+        document.getElementById('invoice-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Add header with larger font size and a line
+            doc.setFontSize(18);
+            doc.text("Top tower technologies invoice", 105, 20, null, null, "center");
+            doc.setLineWidth(0.5);
+            doc.line(10, 25, 200, 25);
+
+            // Add invoice details
+            doc.setFontSize(12);
+            doc.text(`Invoice Number: ${document.getElementById('invoice-number').value}`, 10, 35);
+            doc.text(`Date: ${document.getElementById('date').value}`, 10, 45);
+            doc.text(`Billed to: ${document.getElementById('client-name').value}`, 10, 55);
+
+            // Add table headers
+            doc.setFontSize(10);
+            doc.setFillColor(200, 200, 200);
+            doc.rect(10, 65, 190, 10, 'F');
+            doc.text("Description", 12, 72);
+            doc.text("Quantity", 90, 72);
+            doc.text("Price", 130, 72);
+            doc.text("Total", 172, 72);
+
+            // Add table data
+            let yPosition = 82;
+            let grandTotal = 0;
+
+            const items = document.querySelectorAll('.item-row');
+            items.forEach(function(item) {
+                const description = item.querySelector('.item-description').value;
+                const quantity = item.querySelector('.item-quantity').value;
+                const price = item.querySelector('.item-price').value;
+                const total = (quantity * price).toFixed(2);
+
+                grandTotal += parseFloat(total);
+
+                doc.text(description, 12, yPosition);
+                doc.text(quantity.toString(), 92, yPosition);
+                doc.text(price.toString(), 132, yPosition);
+                doc.text(total.toString(), 172, yPosition);
+
+                yPosition += 10;
+            });
+
+            // Add grand total
+            doc.setLineWidth(0.5);
+            doc.line(10, yPosition, 200, yPosition);
+            yPosition += 10;
+            doc.setFontSize(12);
+            doc.text(`Grand Total: $${grandTotal.toFixed(2)}`, 145, yPosition);
+
+            // Add footer
+            yPosition += 20;
+            doc.setFontSize(10);
+            doc.text("Thank you for your business!", 105, yPosition, null, null, "center");
+
+            doc.save(`invoice_${document.getElementById('invoice-number').value}.pdf`);
+        });
+    </script>
+</body>
+</html>
