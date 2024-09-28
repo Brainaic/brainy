@@ -7,7 +7,7 @@
 
 :root {
   --color-primary: #191d2b;
-  --color-secondary: #27AE60;
+  --color-secondary: #fa0047;
   --color-white: #FFFFFF;
   --color-black: #000;
   --color-grey0: #f8f8f8;
@@ -235,12 +235,12 @@ section {
   flex-direction: column;
 }
 .about-container .right-about .about-item .abt-text .large-text {
-  font-size: 3rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--color-secondary);
 }
 .about-container .right-about .about-item .abt-text .small-text {
-  padding-left: 3rem;
+  padding-left: 2rem;
   position: relative;
   text-transform: uppercase;
   font-size: 1.2rem;
